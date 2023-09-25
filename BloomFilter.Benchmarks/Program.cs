@@ -1,21 +1,17 @@
 ﻿using System.Text;
 
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Engines;
 using BenchmarkDotNet.Running;
 
 namespace BloomFilter.Benchmarks
 {
     [MemoryDiagnoser]
-    [SimpleJob(launchCount: 1, warmupCount: 0, iterationCount: 1)]
+    [SimpleJob]
     public class BloomFilterAdd
     {
         private const int N = 10000;
 
-        // Items to add to filter
-        private readonly byte[] data = new byte[10];
-
-        private List<byte[]> items = Enumerable.Range(0, 15000)
+        private List<byte[]> items = Enumerable.Range(0, N * 2)
                .Select(x => Encoding.UTF8.GetBytes(x.ToString()))
                .ToList();
 
@@ -23,7 +19,7 @@ namespace BloomFilter.Benchmarks
         private readonly IBloomFilter b = FilterBuilder.Build(N, 0.01, HashMethod.XXHash64);
 
         [Benchmark]
-        public int A()
+        public int BloomFilter_Wibblr()
         {
             int x = 0;
 
@@ -43,7 +39,7 @@ namespace BloomFilter.Benchmarks
 
 
         [Benchmark]
-        public int B()
+        public int BloomFilter_NetCore()
         {
             int x = 0;
 

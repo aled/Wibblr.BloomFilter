@@ -14,4 +14,8 @@
     <PackageReference Include="System.IO.Hashing" Version="7.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\BloomFilter.XxHash64\BloomFilter.XxHash64.csproj" />
+  </ItemGroup>
+
 </Project>

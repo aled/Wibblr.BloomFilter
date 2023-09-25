@@ -1,18 +1,23 @@
 ﻿using System.Collections;
-using System.IO.Hashing;
 using System.Numerics;
 using System.Security.Cryptography;
+
+using HashDepot;
 
 namespace BloomFilter
 {
     public class BloomFilter
     {
+        private enum Operation
+        {
+            Add = 0,
+            Query = 1
+        };
+
         private readonly BitArray _value;
         private readonly int _hashCount;
         private readonly int _hashLength;
-        private readonly long _seed;
-
-        private readonly XxHash64 xxHash64 = new XxHash64();
+        private readonly ulong _seed;
 
         /// <summary>
         /// Calculate the capacity of the filter given the filter size, hash count and
@@ -110,7 +115,7 @@ namespace BloomFilter
             _hashCount = CalculateHashCount(filterSize, capacity, out var actualFalsePositiveRatio);
             _hashLength = BitOperations.TrailingZeroCount(filterSize); // relies on the filter size being a power of 2
             _value = new BitArray(filterSize);
-            _seed = BitConverter.ToInt64(RandomNumberGenerator.GetBytes(8));
+            _seed = BitConverter.ToUInt64(RandomNumberGenerator.GetBytes(8));
 
             Console.WriteLine($"Creating bloom filter with capacity {capacity} and false positive ratio under {falsePositiveRatio}."); 
             Console.WriteLine($"  Setting filter size={filterSize} and hash count={_hashCount}");
@@ -120,32 +125,35 @@ namespace BloomFilter
             Console.WriteLine($"  false positive ratio={actualFalsePositiveRatio} at capacity={capacity}");
         }
 
-        private bool VisitHashes(ReadOnlySpan<byte> source, Func<int, bool> visit)
+        private bool AddOrQuery(ReadOnlySpan<byte> source, Operation operation)
         {
-            var hashesPerHash64 = 64 / _hashLength;
             var mask = (1 << _hashLength) - 1;
             var seed = _seed;
+            var hash64 = 0ul;
+            var hashBitsAvailable = 0;
 
-            xxHash64.Reset();
-            xxHash64.Append(source);
-
-            int visitCount = 0;
-            while (visitCount < _hashCount)
+            for (int i = 0; i < _hashCount; i++)
             {
-                xxHash64.Append(BitConverter.GetBytes(seed++));
-                var hash64 = BitConverter.ToUInt64(xxHash64.GetCurrentHash());
-
-                for (int j = 0; 
-                    j < hashesPerHash64 && visitCount < _hashCount; 
-                    j++, visitCount++)
+                if (hashBitsAvailable < _hashLength)
                 {
-                    int hash = (int)hash64 & mask;
-                    if (!visit(hash))
+                    hash64 = XXHash.Hash64(source, seed++);
+                    hashBitsAvailable = 64;
+                }
+
+                int hash = (int)hash64 & mask;
+                hashBitsAvailable -= _hashLength;
+                hash64 >>= _hashLength;
+
+                if (operation == Operation.Add)
+                {
+                    _value[hash] = true;
+                }
+                if (operation == Operation.Query)
+                {
+                    if (!_value[hash])
                     {
                         return false;
                     }
-                    visitCount++;
-                    hash64 >>= _hashLength;
                 }
             }
             return true;
@@ -153,23 +161,12 @@ namespace BloomFilter
 
         public void Add(ReadOnlySpan<byte> buf)
         {
-            bool AddHash(int hash)
-            {
-                _value[hash] = true;
-                return true;
-            }
-
-            VisitHashes(buf, AddHash);
+            AddOrQuery(buf, Operation.Add);
         }
 
         public bool MayContain(ReadOnlySpan<byte> buf)
         {
-            bool MayContain(int hash)
-            {
-                return _value[hash];
-            }
-
-            return VisitHashes(buf, MayContain);
+            return AddOrQuery(buf, Operation.Query);
         }
     }
 }

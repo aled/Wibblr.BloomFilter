@@ -4,19 +4,32 @@ namespace BloomFilter.Demo
 {
     internal class Program
     {
-        BloomFilter b;
+        BloomFilter _filter;
 
         static async Task Main(string[] args)
         {
             var count = 20000;
 
-            //var text = await GetBibleText();
-            //var words = GetUniqueWords(text);
-            var words = Enumerable.Range(0, count * 2)
+            var words = GetUniqueWords(await GetBibleText());
+
+            var words2 = Enumerable.Range(0, count * 2)
                 .Select(x => Encoding.UTF8.GetBytes(x.ToString()))
                 .ToList();
 
-            new Program().Run(words, count, 0.1d);
+            new Program().Run(words2, count, 0.1d);
+        }
+
+        // Use this for memory profiling
+        static void Main2(string[] args)
+        {
+            var x = new BloomFilter(10000, 0.1d);
+
+            x.Add(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
+
+            while (true)
+            {
+                Thread.Sleep(1000);
+            }
         }
 
         static async Task<string> GetBibleText()
@@ -54,19 +67,7 @@ namespace BloomFilter.Demo
             return File.ReadAllText(localFilePath);
         }
 
-        public void Run(List<byte[]> words, int itemsToAdd, double p)
-        {
-            b = new BloomFilter(itemsToAdd, p);
-
-            var addedItems = words.Take(itemsToAdd).ToList();
-            AddItems(words.Take(itemsToAdd));
-
-            // include half the added words in the query
-            var queriedItems = words.Skip(itemsToAdd / 2).Take(itemsToAdd).ToList();
-            QueryItems(addedItems, queriedItems);
-        }
-
-        public List<byte[]> GetUniqueWords(string text)
+        public static List<byte[]> GetUniqueWords(string text)
         {
             var words = text.Split(new[] { ' ', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
                 .ToHashSet()
@@ -76,11 +77,23 @@ namespace BloomFilter.Demo
             return words;
         }
 
+        public void Run(List<byte[]> words, int itemsToAdd, double p)
+        {
+            _filter = new BloomFilter(itemsToAdd, p);
+
+            var addedItems = words.Take(itemsToAdd).ToList();
+            AddItems(words.Take(itemsToAdd));
+
+            // include half the added words in the query
+            var queriedItems = words.Skip(itemsToAdd / 2).Take(itemsToAdd).ToList();
+            QueryItems(addedItems, queriedItems);
+        }
+
         public void AddItems(IEnumerable<byte[]> items)
         {
             foreach (var word in items)
             {
-                b.Add(word);
+                _filter.Add(word);
             }
         }
 
@@ -91,11 +104,7 @@ namespace BloomFilter.Demo
 
             foreach (var word in queriedItems)
             {
-                int temp = int.Parse(Encoding.UTF8.GetString(word));
-                if (temp % 1000 == 0)
-                    Console.Write("*");
-
-                if (!b.MayContain(word))
+                if (!_filter.MayContain(word))
                 {
                     notFound++;
                    // Console.WriteLine($"{Encoding.UTF8.GetString(word)} not found");
