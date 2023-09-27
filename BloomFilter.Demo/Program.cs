@@ -1,22 +1,15 @@
-﻿using System.Text;
-using BloomFilter.Core;
-namespace BloomFilter.Demo
+﻿namespace BloomFilter.Demo
 {
     internal class Program
     {
+        int count = 200000;
+        double falsePositiveRatio = 0.1d;
+
         BloomFilter _filter;
 
-        static async Task Main(string[] args)
+        static void Main(string[] args)
         {
-            var count = 20000;
-
-            var words = GetUniqueWords(await GetBibleText());
-
-            var words2 = Enumerable.Range(0, count * 2)
-                .Select(x => Encoding.UTF8.GetBytes(x.ToString()))
-                .ToList();
-
-            new Program().Run(words2, count, 0.1d);
+            new Program().Run();
         }
 
         // Use this for memory profiling
@@ -24,107 +17,69 @@ namespace BloomFilter.Demo
         {
             var x = new BloomFilter(10000, 0.1d);
 
-            x.Add(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
-
             while (true)
             {
+                x.Add(100L);
                 Thread.Sleep(1000);
             }
         }
 
-        static async Task<string> GetBibleText()
+        public void Run()
         {
-            string localFilePath = "kjv.txt";
-            try
-            {
-                return File.ReadAllText(localFilePath);
-            }
-            catch (Exception)
-            {
-                Console.WriteLine("Downloading..");
-            }
+            _filter = new BloomFilter(count, falsePositiveRatio);
 
-            try
-            {
-                string url = "https://www.gutenberg.org/cache/epub/10/pg10.txt";
+            var t1 = DateTime.UtcNow;
+            Add();
+            var t2 = DateTime.UtcNow;
+            Query();
+            var t3 = DateTime.UtcNow;
 
-                using (var httpClient = new HttpClient())
-                {
-                    var response = await httpClient.GetAsync(url);
-                    response.EnsureSuccessStatusCode();
-
-                    using (var fileStream = File.Create(localFilePath))
-                    {
-                        await response.Content.CopyToAsync(fileStream);
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-            }
-
-            return File.ReadAllText(localFilePath);
+            Console.WriteLine($"{double.Round((t2 - t1).TotalNanoseconds / count, 1)}ns per add");
+            Console.WriteLine($"{double.Round((t3 - t2).TotalNanoseconds / count, 1)}ns per query");
         }
 
-        public static List<byte[]> GetUniqueWords(string text)
+        private void Add()
         {
-            var words = text.Split(new[] { ' ', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
-                .ToHashSet()
-                .Select(Encoding.UTF8.GetBytes)
-                .ToList();
+            long i = 0;
 
-            return words;
-        }
-
-        public void Run(List<byte[]> words, int itemsToAdd, double p)
-        {
-            _filter = new BloomFilter(itemsToAdd, p);
-
-            var addedItems = words.Take(itemsToAdd).ToList();
-            AddItems(words.Take(itemsToAdd));
-
-            // include half the added words in the query
-            var queriedItems = words.Skip(itemsToAdd / 2).Take(itemsToAdd).ToList();
-            QueryItems(addedItems, queriedItems);
-        }
-
-        public void AddItems(IEnumerable<byte[]> items)
-        {
-            foreach (var word in items)
+            while (i < count)
             {
-                _filter.Add(word);
+                _filter.Add(i);
+                i++;
             }
         }
 
-        public void QueryItems(IList<byte[]> addedItems, IList<byte[]> queriedItems)
+        private void Query()
         {
+            // include half the added items in the query
             int notFound = 0, truePositive = 0, falsePositive = 0;
-            var comparer = new ByteArrayEqualityComparer();
 
-            foreach (var word in queriedItems)
+            long i = count / 2;
+
+            while (i < count + count / 2)
             {
-                if (!_filter.MayContain(word))
+                if (!_filter.MayContain(i))
                 {
                     notFound++;
-                   // Console.WriteLine($"{Encoding.UTF8.GetString(word)} not found");
+                    //Console.WriteLine($"{i} not found");
                 }
                 else
                 {
-                    if (addedItems.Contains(word, comparer))
+                    if (i < count)
                     {
                         truePositive++;
-                        //Console.WriteLine($"{Encoding.UTF8.GetString(word)} found (true positive)");
+                        //Console.WriteLine($"{i} found (true positive)");
                     }
                     else
                     {
                         falsePositive++;
-                        //Console.WriteLine($"{Encoding.UTF8.GetString(word)} not found (false positive)");
+                        //Console.WriteLine($"{i} not found (false positive)");
                     }
                 }
+                i++;
             }
 
-            Console.WriteLine($"Total {queriedItems.Count}, Found: {truePositive} NotFound: {notFound + falsePositive} with {falsePositive} false positives ({falsePositive / (double)(notFound + falsePositive)})");
+            Console.WriteLine($"Total items queried {count}, Found: {truePositive} NotFound: {notFound + falsePositive} with {falsePositive} false positives ({double.Round(falsePositive / ((double)(notFound + falsePositive)), 6)})");
         }
     }
 }
