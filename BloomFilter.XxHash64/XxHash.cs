@@ -7,7 +7,6 @@
 // </copyright>
 
 using System;
-using System.IO;
 using System.Runtime.CompilerServices;
 
 namespace HashDepot
@@ -22,12 +21,6 @@ namespace HashDepot
         private const ulong prime64v3 = 1609587929392839161ul;
         private const ulong prime64v4 = 9650029242287828579ul;
         private const ulong prime64v5 = 2870177450012600261ul;
-
-        private const uint prime32v1 = 2654435761u;
-        private const uint prime32v2 = 2246822519u;
-        private const uint prime32v3 = 3266489917u;
-        private const uint prime32v4 = 668265263u;
-        private const uint prime32v5 = 374761393u;
 
         /// <summary>
         /// Generate a 64-bit xxHash value.
@@ -159,83 +152,6 @@ namespace HashDepot
             acc ^= round64(0, accn);
             acc *= prime64v1;
             acc += prime64v4;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static (uint Acc1, uint Acc2, uint Acc3, uint Acc4) initAccumulators32(
-            uint seed)
-        {
-            return (seed + prime32v1 + prime32v2, seed + prime32v2, seed, seed - prime32v1);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static uint processStripe32(
-            ReadOnlySpan<byte> buf,
-            ref uint acc1,
-            ref uint acc2,
-            ref uint acc3,
-            ref uint acc4)
-        {
-            processLane32(buf[0..4], ref acc1);
-            processLane32(buf[4..8], ref acc2);
-            processLane32(buf[8..12], ref acc3);
-            processLane32(buf[12..16], ref acc4);
-
-            return Bits.RotateLeft(acc1, 1)
-                 + Bits.RotateLeft(acc2, 7)
-                 + Bits.RotateLeft(acc3, 12)
-                 + Bits.RotateLeft(acc4, 18);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void processLane32(ReadOnlySpan<byte> buf, ref uint accn)
-        {
-            uint lane = Bits.ToUInt32(buf);
-            accn = round32(accn, lane);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static uint processRemaining32(
-            ReadOnlySpan<byte> remaining,
-            uint acc)
-        {
-            int i = 0;
-            int remainingLen = remaining.Length;
-            for (uint lane; remainingLen >= 4; remainingLen -= 4, i += 4)
-            {
-                lane = Bits.ToUInt32(remaining[i..]);
-                acc += lane * prime32v3;
-                acc = Bits.RotateLeft(acc, 17) * prime32v4;
-            }
-
-            for (byte lane; remainingLen >= 1; remainingLen--, i++)
-            {
-                lane = remaining[i];
-                acc += lane * prime32v5;
-                acc = Bits.RotateLeft(acc, 11) * prime32v1;
-            }
-
-            return acc;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static uint round32(uint accn, uint lane)
-        {
-            accn += lane * prime32v2;
-            accn = Bits.RotateLeft(accn, 13);
-            accn *= prime32v1;
-            return accn;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static uint avalanche32(uint acc)
-        {
-            acc ^= acc >> 15;
-            acc *= prime32v2;
-            acc ^= acc >> 13;
-            acc *= prime32v3;
-            acc ^= acc >> 16;
-            return acc;
         }
     }
 }

@@ -24,12 +24,6 @@ internal static class Bits
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static uint RotateLeft(uint value, int bits)
-    {
-        return (value << bits) | (value >> (32 - bits));
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static ulong ToUInt64(ReadOnlySpan<byte> bytes)
     {
         return Unsafe.ReadUnaligned<ulong>(ref MemoryMarshal.GetReference(bytes));
