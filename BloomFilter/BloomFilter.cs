@@ -46,7 +46,7 @@ namespace BloomFilter
         /// </summary>
         /// <param name="n">Expected filter capacity</param>
         /// <param name="p">Expected false positive ratio (greater than 0; less than 1)</param>
-        /// <returns>THe size of the filter in bits</returns>
+        /// <returns>The size of the filter in bits</returns>
         private static int CalculateFilterSize(double n, double p)
         {
             const int maxSize = 1 << 30;
@@ -72,7 +72,7 @@ namespace BloomFilter
         /// <param name="m">Filter size in bits</param>
         /// <param name="n">Capacity of the filter</param>
         /// <param name="actualFalsePositiveRatio">Returns the actual false positive ratio of the returned hash count</param>
-        /// <returns>the hash function count</returns>
+        /// <returns>The hash function count</returns>
         private static int CalculateHashCount(int m, double n, out double actualFalsePositiveRatio)
         {
             // Calculate the value rounded both up and down, calculate p for each,
@@ -118,11 +118,11 @@ namespace BloomFilter
             _seed = BitConverter.ToUInt64(RandomNumberGenerator.GetBytes(8));
 
             Console.WriteLine($"Creating bloom filter with capacity {capacity} and false positive ratio under {falsePositiveRatio}."); 
-            Console.WriteLine($"  Setting filter size={filterSize} and hash count={_hashCount}");
+            Console.WriteLine($"  Allocating filter size={filterSize} bits ({filterSize / 8192} KB); hash count={_hashCount}; hash length={_hashLength} bits");
 
             var capacityAtExpectedFalsePositiveRatio = CalculateCapacity(filterSize, _hashCount, falsePositiveRatio);
-            Console.WriteLine($"  capacity={capacityAtExpectedFalsePositiveRatio} at false positive ratio={falsePositiveRatio}");
-            Console.WriteLine($"  false positive ratio={actualFalsePositiveRatio} at capacity={capacity}");
+            Console.WriteLine($"  Expected capacity={capacityAtExpectedFalsePositiveRatio} at false positive ratio={double.Round(falsePositiveRatio, 6)}");
+            Console.WriteLine($"  Expected false positive ratio={double.Round(actualFalsePositiveRatio, 6)} at capacity={capacity}");
         }
 
         private bool AddOrQuery(ReadOnlySpan<byte> source, Operation operation)
@@ -148,7 +148,7 @@ namespace BloomFilter
                 {
                     _value[hash] = true;
                 }
-                if (operation == Operation.Query)
+                else if (operation == Operation.Query)
                 {
                     if (!_value[hash])
                     {
