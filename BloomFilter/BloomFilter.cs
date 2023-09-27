@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
 using HashDepot;
@@ -92,7 +93,6 @@ namespace BloomFilter
             return k + 1;
         }
 
-        // 
         /// <summary>
         /// Calculate the false positive ratio of the filter, given the hash count, filter size, and capacity;
         /// using the formula:
@@ -164,9 +164,19 @@ namespace BloomFilter
             AddOrQuery(buf, Operation.Add);
         }
 
+        public void Add<T>(T item) where T : unmanaged
+        {
+            Add(MemoryMarshal.Cast<T, byte>(MemoryMarshal.CreateReadOnlySpan(ref item, 1)));
+        }
+
         public bool MayContain(ReadOnlySpan<byte> buf)
         {
             return AddOrQuery(buf, Operation.Query);
+        }
+
+        public bool MayContain<T>(T item) where T : unmanaged
+        {
+            return MayContain(MemoryMarshal.Cast<T, byte>(MemoryMarshal.CreateReadOnlySpan(ref item, 1)));
         }
     }
 }
