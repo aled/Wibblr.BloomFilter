@@ -54,7 +54,7 @@ namespace BloomFilter
 
             if (p <= 0 || p >= 1)
             {
-                throw new ArgumentException(nameof(p));
+                throw new ArgumentException("Invalid false positive ratio", nameof(p));
             }
 
             double m = n * Math.Log(p) / Math.Log(1 / Math.Pow(2, Math.Log(2)));

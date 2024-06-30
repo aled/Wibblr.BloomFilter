@@ -2,32 +2,35 @@
 {
     internal class Program
     {
-        int count = 200000;
-        double falsePositiveRatio = 0.1d;
+        readonly int count = 200000;
+        readonly double falsePositiveRatio = 0.1d;
 
-        BloomFilter _filter;
+        readonly BloomFilter _filter;
 
-        static void Main(string[] args)
+        private Program()
+        {
+            _filter = new BloomFilter(count, falsePositiveRatio);
+        }
+
+        static void Main()
         {
             new Program().Run();
         }
 
         // Use this for memory profiling
-        static void Main2(string[] args)
-        {
-            var x = new BloomFilter(10000, 0.1d);
-
-            while (true)
-            {
-                x.Add(100L);
-                Thread.Sleep(1000);
-            }
-        }
+        //static void Main2()
+        //{
+        //    var x = new BloomFilter(10000, 0.1d);
+        //
+        //    while (true)
+        //    {
+        //        x.Add(100L);
+        //        Thread.Sleep(1000);
+        //    }
+        //}
 
         public void Run()
         {
-            _filter = new BloomFilter(count, falsePositiveRatio);
-
             var t1 = DateTime.UtcNow;
             Add();
             var t2 = DateTime.UtcNow;
