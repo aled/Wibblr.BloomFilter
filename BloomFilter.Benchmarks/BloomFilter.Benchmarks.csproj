@@ -9,8 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BenchmarkDotNet" Version="0.13.8" />
-    <PackageReference Include="BloomFilter.NetCore" Version="2.1.1" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.13.12" />
+    <PackageReference Include="BloomFilter.NetCore" Version="2.2.1" />
   </ItemGroup>
 
   <ItemGroup>

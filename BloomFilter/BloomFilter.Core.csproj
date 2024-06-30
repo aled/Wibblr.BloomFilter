@@ -10,8 +10,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BloomFilter.NetCore" Version="2.1.1" />
-    <PackageReference Include="System.IO.Hashing" Version="7.0.0" />
+    <PackageReference Include="BloomFilter.NetCore" Version="2.2.1" />
+    <PackageReference Include="System.IO.Hashing" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>
