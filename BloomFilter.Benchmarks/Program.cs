@@ -11,11 +11,11 @@ namespace BloomFilter.Benchmarks
     {
         private const int N = 10000;
 
-        private List<byte[]> items = Enumerable.Range(0, N * 2)
+        private readonly List<byte[]> items = Enumerable.Range(0, N * 2)
                .Select(x => Encoding.UTF8.GetBytes(x.ToString()))
                .ToList();
 
-        private readonly BloomFilter a = new BloomFilter(N, 0.01);
+        private readonly BloomFilter a = new(N, 0.01);
         private readonly IBloomFilter b = FilterBuilder.Build(N, 0.01, HashMethod.XXHash64);
 
         [Benchmark]
@@ -60,9 +60,9 @@ namespace BloomFilter.Benchmarks
 
     public class Program
     {
-        public static void Main(string[] args)
+        public static void Main()
         {
-            var summary = BenchmarkRunner.Run<BloomFilterAdd>();
+            BenchmarkRunner.Run<BloomFilterAdd>();
         }
     }
 }
