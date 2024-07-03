@@ -1,9 +1,9 @@
 # Wibblr.BloomFilter
 
-An implementation of a BloomFilter, a data structure which has 2 methods, Add() and MayContain().
+An implementation of a BloomFilter, a data structure which has 2 methods, Add() and Contains().
 
-If MayContain() returns false, the item has *definitely* not been added; if it returns true, the item has *probably* been added. The false positive ratio is specified
-by the user at runtime (for example, 0.01, meaning 1 in 100 times that an item does not exist, MayContain() will return true).
+If Contains() returns false, the item has *definitely* not been added; if it returns true, the item has *probably* been added. The false positive ratio is specified
+by the user at runtime (for example, 0.01, meaning 1 in 100 times that an item does not exist, Contains() will return true).
 
 A bloom filter is smaller than the items contained in it. For example, in 16KB of memory, over 26000 items *of any size* can be stored with a false positive ratio of 0.01.
 

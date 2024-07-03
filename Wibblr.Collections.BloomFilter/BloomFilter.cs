@@ -1,15 +1,29 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
 using HashDepot;
 
-namespace BloomFilter
+namespace Wibblr.Collections.BloomFilter
 {
+    public class BloomFilter<T>(int capacity, double falsePositiveRatio) : BloomFilter(capacity, falsePositiveRatio) where T : unmanaged
+    {
+        public void Add(T item)
+        {
+            Add(MemoryMarshal.Cast<T, byte>(MemoryMarshal.CreateReadOnlySpan(ref item, 1)));
+        }
+
+        public bool Contains(T item)
+        {
+            return Contains(MemoryMarshal.Cast<T, byte>(MemoryMarshal.CreateReadOnlySpan(ref item, 1)));
+        }
+    }
+
     public class BloomFilter
     {
-        private enum Operation
+        protected enum Operation
         {
             Add = 0,
             Query = 1
@@ -19,6 +33,23 @@ namespace BloomFilter
         private readonly int _hashCount;
         private readonly int _hashLength;
         private readonly ulong _seed;
+
+        public BloomFilter(int capacity, double falsePositiveRatio)
+        {
+            int filterSize = CalculateFilterSize(capacity, falsePositiveRatio);
+
+            _hashCount = CalculateHashCount(filterSize, capacity, out var actualFalsePositiveRatio);
+            _hashLength = BitOperations.TrailingZeroCount(filterSize); // relies on the filter size being a power of 2
+            _value = new BitArray(filterSize);
+            _seed = BitConverter.ToUInt64(RandomNumberGenerator.GetBytes(8));
+
+            Console.WriteLine($"Creating bloom filter with capacity {capacity} and false positive ratio under {falsePositiveRatio}.");
+            Console.WriteLine($"  Allocating filter size={filterSize} bits ({filterSize / 8192} KB); hash count={_hashCount}; hash length={_hashLength} bits");
+
+            var capacityAtExpectedFalsePositiveRatio = CalculateCapacity(filterSize, _hashCount, falsePositiveRatio);
+            Console.WriteLine($"  Expected capacity={capacityAtExpectedFalsePositiveRatio} at false positive ratio={double.Round(falsePositiveRatio, 6)}");
+            Console.WriteLine($"  Expected false positive ratio={double.Round(actualFalsePositiveRatio, 6)} at capacity={capacity}");
+        }
 
         /// <summary>
         /// Calculate the capacity of the filter given the filter size, hash count and
@@ -108,23 +139,6 @@ namespace BloomFilter
             return Math.Pow(1 - Math.Exp(-k / (m / n)), k);
         }
 
-        public BloomFilter(int capacity, double falsePositiveRatio)
-        {
-            int filterSize = CalculateFilterSize(capacity, falsePositiveRatio);
-            
-            _hashCount = CalculateHashCount(filterSize, capacity, out var actualFalsePositiveRatio);
-            _hashLength = BitOperations.TrailingZeroCount(filterSize); // relies on the filter size being a power of 2
-            _value = new BitArray(filterSize);
-            _seed = BitConverter.ToUInt64(RandomNumberGenerator.GetBytes(8));
-
-            Console.WriteLine($"Creating bloom filter with capacity {capacity} and false positive ratio under {falsePositiveRatio}."); 
-            Console.WriteLine($"  Allocating filter size={filterSize} bits ({filterSize / 8192} KB); hash count={_hashCount}; hash length={_hashLength} bits");
-
-            var capacityAtExpectedFalsePositiveRatio = CalculateCapacity(filterSize, _hashCount, falsePositiveRatio);
-            Console.WriteLine($"  Expected capacity={capacityAtExpectedFalsePositiveRatio} at false positive ratio={double.Round(falsePositiveRatio, 6)}");
-            Console.WriteLine($"  Expected false positive ratio={double.Round(actualFalsePositiveRatio, 6)} at capacity={capacity}");
-        }
-
         private bool AddOrQuery(ReadOnlySpan<byte> source, Operation operation)
         {
             var mask = (1 << _hashLength) - 1;
@@ -164,19 +178,9 @@ namespace BloomFilter
             AddOrQuery(buf, Operation.Add);
         }
 
-        public void Add<T>(T item) where T : unmanaged
-        {
-            Add(MemoryMarshal.Cast<T, byte>(MemoryMarshal.CreateReadOnlySpan(ref item, 1)));
-        }
-
-        public bool MayContain(ReadOnlySpan<byte> buf)
+        public bool Contains(ReadOnlySpan<byte> buf)
         {
             return AddOrQuery(buf, Operation.Query);
-        }
-
-        public bool MayContain<T>(T item) where T : unmanaged
-        {
-            return MayContain(MemoryMarshal.Cast<T, byte>(MemoryMarshal.CreateReadOnlySpan(ref item, 1)));
         }
     }
 }

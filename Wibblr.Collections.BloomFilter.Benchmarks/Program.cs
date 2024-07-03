@@ -3,7 +3,9 @@
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 
-namespace BloomFilter.Benchmarks
+using NetCoreBf = BloomFilter;
+
+namespace Wibblr.Collections.BloomFilter.Benchmarks
 {
     [MemoryDiagnoser]
     [SimpleJob]
@@ -16,7 +18,7 @@ namespace BloomFilter.Benchmarks
                .ToList();
 
         private readonly BloomFilter a = new(N, 0.01);
-        private readonly IBloomFilter b = FilterBuilder.Build(N, 0.01, HashMethod.XXHash64);
+        private readonly NetCoreBf.IBloomFilter b = NetCoreBf.FilterBuilder.Build(N, 0.01, NetCoreBf.HashMethod.XXHash64);
 
         [Benchmark]
         public int BloomFilter_Wibblr()
@@ -29,7 +31,7 @@ namespace BloomFilter.Benchmarks
             }
             for (int i = 5000; i < 15000; i++)
             {
-                if (a.MayContain(items[i]))
+                if (a.Contains(items[i]))
                 {
                     x++;
                 }

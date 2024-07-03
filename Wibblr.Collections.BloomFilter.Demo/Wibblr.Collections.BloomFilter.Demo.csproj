@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BloomFilter\BloomFilter.Core.csproj" />
+    <ProjectReference Include="..\Wibblr.Collections.BloomFilter\Wibblr.Collections.BloomFilter.csproj" />
   </ItemGroup>
 
 </Project>

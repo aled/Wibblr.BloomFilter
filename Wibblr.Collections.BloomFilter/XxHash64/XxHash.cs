@@ -6,7 +6,9 @@
 // MIT License (see LICENSE file for details)
 // </copyright>
 
-using System;
+// Suppress naming rules warnings/messages
+#pragma warning disable IDE1006
+
 using System.Runtime.CompilerServices;
 
 namespace HashDepot

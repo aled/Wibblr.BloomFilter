@@ -1,15 +1,15 @@
-﻿namespace BloomFilter.Demo
+﻿namespace Wibblr.Collections.BloomFilter.Demo
 {
     internal class Program
     {
         readonly int count = 200000;
         readonly double falsePositiveRatio = 0.1d;
 
-        readonly BloomFilter _filter;
+        readonly BloomFilter<long> _filter;
 
         private Program()
         {
-            _filter = new BloomFilter(count, falsePositiveRatio);
+            _filter = new BloomFilter<long>(count, falsePositiveRatio);
         }
 
         static void Main()
@@ -61,7 +61,7 @@
 
             while (i < count + count / 2)
             {
-                if (!_filter.MayContain(i))
+                if (!_filter.Contains(i))
                 {
                     notFound++;
                     //Console.WriteLine($"{i} not found");
