@@ -5,16 +5,12 @@
         private readonly int count = 200000;
         private readonly double falsePositiveRatio = 0.1d;
 
-        private readonly BloomFilter<long> _filter;
-
-        private Program()
-        {
-            _filter = new BloomFilter<long>(count, falsePositiveRatio);
-        }
+        private BloomFilter<long> _filter;
 
         private static void Main()
         {
-            new Program().Run();
+            // new Program().RunBloomFilter();
+            new CountingDemo().RunCountingBloomFilter();
         }
 
         // Use this for memory profiling
@@ -29,8 +25,15 @@
         //    }
         //}
 
-        public void Run()
+        public void RunBloomFilter()
         {
+            _filter = new BloomFilter<long>(count, falsePositiveRatio);
+
+            Console.WriteLine($"Creating bloom filter with capacity of {_filter.RequestedCapacity} items, and false positive ratio {_filter.RequestedFalsePositiveRatio}.");
+            Console.WriteLine($"  Allocating filter size={_filter.FilterSize} bits ({_filter.FilterSize / 8192} KB); hash count={_filter.HashCount}; hash length={_filter.HashLength} bits");
+            Console.WriteLine($"  Expected capacity={_filter.CapacityAtRequestedFalsePositiveRatio} at false positive ratio={double.Round(_filter.RequestedFalsePositiveRatio, 6)}");
+            Console.WriteLine($"  Expected false positive ratio={double.Round(_filter.FalsePositiveRatioAtRequestedCapacity, 6)} at capacity={_filter.RequestedCapacity}");
+
             var t1 = DateTime.UtcNow;
             Add();
             var t2 = DateTime.UtcNow;

@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Numerics;
+﻿using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
@@ -7,21 +6,21 @@ using HashDepot;
 
 namespace Wibblr.Collections.BloomFilter
 {
-    public class BloomFilter<T>(int capacity, double falsePositiveRatio) : BloomFilter(capacity, falsePositiveRatio)
+    public class CountingBloomFilter<T>(int capacity, double falsePositiveRatio) : CountingBloomFilter(capacity, falsePositiveRatio)
         where T : unmanaged
     {
-        public void Add(T item)
+        public void Increment(T item, int count)
         {
-            Add(MemoryMarshal.Cast<T, byte>(MemoryMarshal.CreateReadOnlySpan(ref item, 1)));
+            Increment(MemoryMarshal.Cast<T, byte>(MemoryMarshal.CreateReadOnlySpan(ref item, 1)), count);
         }
 
-        public bool Contains(T item)
+        public int Count(T item)
         {
-            return Contains(MemoryMarshal.Cast<T, byte>(MemoryMarshal.CreateReadOnlySpan(ref item, 1)));
+            return Count(MemoryMarshal.Cast<T, byte>(MemoryMarshal.CreateReadOnlySpan(ref item, 1)));
         }
     }
 
-    public class BloomFilter
+    public class CountingBloomFilter
     {
         protected enum Operation
         {
@@ -29,7 +28,7 @@ namespace Wibblr.Collections.BloomFilter
             Query = 1
         };
 
-        private readonly BitArray _storage;
+        private readonly ushort[] _storage;
         public int RequestedCapacity { get; }
         public double RequestedFalsePositiveRatio { get; }
         public int FilterSize { get; }
@@ -39,7 +38,7 @@ namespace Wibblr.Collections.BloomFilter
         public double CapacityAtRequestedFalsePositiveRatio { get; }
         public double FalsePositiveRatioAtRequestedCapacity { get; }
 
-        public BloomFilter(int capacity, double falsePositiveRatio)
+        public CountingBloomFilter(int capacity, double falsePositiveRatio)
         {
             RequestedCapacity = capacity;
             RequestedFalsePositiveRatio = falsePositiveRatio;
@@ -49,15 +48,17 @@ namespace Wibblr.Collections.BloomFilter
             Seed = BitConverter.ToUInt64(RandomNumberGenerator.GetBytes(8));
             CapacityAtRequestedFalsePositiveRatio = BloomFilterUtils.CalculateCapacity(FilterSize, HashCount, falsePositiveRatio);
 
-            _storage = new BitArray(FilterSize);
+            _storage = new ushort[FilterSize];
         }
 
-        private bool AddOrQuery(ReadOnlySpan<byte> source, Operation operation)
+        private int IncrementOrQuery(ReadOnlySpan<byte> source, Operation operation, int count = 1)
         {
             var mask = (1 << HashLength) - 1;
             var seed = Seed;
             var hash64 = 0ul;
             var hashBitsAvailable = 0;
+
+            ushort min = ushort.MaxValue;
 
             for (int i = 0; i < HashCount; i++)
             {
@@ -73,27 +74,34 @@ namespace Wibblr.Collections.BloomFilter
 
                 if (operation == Operation.Add)
                 {
-                    _storage[hash] = true;
+                    if (_storage[hash] + count - 1 < ushort.MaxValue)
+                    {
+                        _storage[hash] = (ushort)(_storage[hash] + count);
+                    }
+                    else
+                    {
+                        _storage[hash] = ushort.MaxValue;
+                    }
                 }
                 else if (operation == Operation.Query)
                 {
-                    if (!_storage[hash])
+                    if (_storage[hash] < min)
                     {
-                        return false;
+                        min = _storage[hash];
                     }
                 }
             }
-            return true;
+            return min;
         }
 
-        public void Add(ReadOnlySpan<byte> buf)
+        public void Increment(ReadOnlySpan<byte> buf, int count = 1)
         {
-            AddOrQuery(buf, Operation.Add);
+            IncrementOrQuery(buf, Operation.Add, count);
         }
 
-        public bool Contains(ReadOnlySpan<byte> buf)
+        public int Count(ReadOnlySpan<byte> buf)
         {
-            return AddOrQuery(buf, Operation.Query);
+            return IncrementOrQuery(buf, Operation.Query);
         }
     }
 }
