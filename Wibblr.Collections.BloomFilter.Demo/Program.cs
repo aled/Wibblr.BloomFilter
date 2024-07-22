@@ -2,17 +2,17 @@
 {
     internal class Program
     {
-        readonly int count = 200000;
-        readonly double falsePositiveRatio = 0.1d;
+        private readonly int count = 200000;
+        private readonly double falsePositiveRatio = 0.1d;
 
-        readonly BloomFilter<long> _filter;
+        private readonly BloomFilter<long> _filter;
 
         private Program()
         {
             _filter = new BloomFilter<long>(count, falsePositiveRatio);
         }
 
-        static void Main()
+        private static void Main()
         {
             new Program().Run();
         }

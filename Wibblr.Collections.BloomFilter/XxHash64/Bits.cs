@@ -6,7 +6,6 @@
 // MIT License (see LICENSE file for details)
 // </copyright>
 
-using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 

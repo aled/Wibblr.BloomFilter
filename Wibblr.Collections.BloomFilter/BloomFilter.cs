@@ -54,7 +54,7 @@ namespace Wibblr.Collections.BloomFilter
         /// <summary>
         /// Calculate the capacity of the filter given the filter size, hash count and
         /// false positive ratio; using the formula
-        /// 
+        ///
         ///   n = ceil(m / (-k / log(1 - exp(log(p) / k))))
         /// </summary>
         /// <param name="m">filter size in bits</param>
@@ -69,7 +69,7 @@ namespace Wibblr.Collections.BloomFilter
         /// <summary>
         /// Calculate the filter size in bits, given the expected capacity and false positive ratio;
         /// using the formula
-        /// 
+        ///
         ///   m = ceil((n * log(p)) / log(1 / pow(2, log(2))));
         ///
         /// Restrict length to a power of 2 to avoid having to do rejection sampling on the hashes;
@@ -98,7 +98,7 @@ namespace Wibblr.Collections.BloomFilter
         /// <summary>
         /// Calculate the hash count, given the expected capacity and false positive ratio;
         /// using the formula:
-        /// 
+        ///
         ///   k = round((m / n) * log(2));
         /// </summary>
         /// <param name="m">Filter size in bits</param>
@@ -127,7 +127,7 @@ namespace Wibblr.Collections.BloomFilter
         /// <summary>
         /// Calculate the false positive ratio of the filter, given the hash count, filter size, and capacity;
         /// using the formula:
-        /// 
+        ///
         ///   p = pow(1 - exp(-k / (m / n)), k)
         /// </summary>
         /// <param name="k"></param>

@@ -39,7 +39,6 @@ namespace Wibblr.Collections.BloomFilter.Benchmarks
             return x;
         }
 
-
         [Benchmark]
         public int BloomFilter_NetCore()
         {
